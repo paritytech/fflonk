@@ -22,6 +22,7 @@ merlin = { version = "3.0", default-features = false }
 criterion = "0.5"
 ark-bw6-761 = { version = "0.5", default-features = false }
 ark-bls12-381 = { version = "0.5", default-features = false, features = ["curve"] }
+merlin = "3.0"
 
 [[bench]]
 name = "primitives"
@@ -29,6 +30,22 @@ harness = false
 
 [[bench]]
 name = "multiexps"
+harness = false
+
+[[bench]]
+name = "kzg"
+harness = false
+
+[[bench]]
+name = "fflonk"
+harness = false
+
+[[bench]]
+name = "shplonk"
+harness = false
+
+[[bench]]
+name = "pipeline"
 harness = false
 
 [[test]]
