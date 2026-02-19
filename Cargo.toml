@@ -1,7 +1,7 @@
 [package]
 name = "w3f-pcs"
-version = "0.0.5"
-edition = "2021"
+version = "0.0.6"
+edition = "2024"
 authors = ["Sergey Vasilyev <swasilyev@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "Collection of tools for augmenting polynomial commitment schemes"
