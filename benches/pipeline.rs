@@ -41,12 +41,7 @@ fn setup_pipeline(
     let g = Fflonk::combine(t, &fs);
     let gc = CS::commit(&ck, &g).unwrap();
 
-    let data = PipelineData {
-        fs,
-        roots,
-        vss,
-        gc,
-    };
+    let data = PipelineData { fs, roots, vss, gc };
     (data, ck, vk)
 }
 
@@ -111,13 +106,8 @@ fn fflonky_kzg_roundtrip(c: &mut Criterion) {
 
     group.bench_function("open+verify/t=4,d=255,m=2", |b| {
         b.iter_with_setup(new_transcript, |mut transcript| {
-            let proof = FflonkyKzg::<F, CS>::open_single(
-                &ck,
-                &data.fs,
-                t,
-                &data.roots,
-                &mut transcript,
-            );
+            let proof =
+                FflonkyKzg::<F, CS>::open_single(&ck, &data.fs, t, &data.roots, &mut transcript);
             FflonkyKzg::<F, CS>::verify_single(
                 &vk,
                 &data.gc,

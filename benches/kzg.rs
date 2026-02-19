@@ -15,12 +15,11 @@ fn kzg_setup<E: Pairing>(c: &mut Criterion) {
 
     for log_n in [8, 10, 12] {
         let max_degree = (1 << log_n) - 1;
-        group.bench_with_input(BenchmarkId::new("setup", format!("2^{}", log_n)), &max_degree, |b, &d| {
-            b.iter_with_setup(
-                || test_rng(),
-                |mut rng| KZG::<E>::setup(d, &mut rng),
-            )
-        });
+        group.bench_with_input(
+            BenchmarkId::new("setup", format!("2^{}", log_n)),
+            &max_degree,
+            |b, &d| b.iter_with_setup(|| test_rng(), |mut rng| KZG::<E>::setup(d, &mut rng)),
+        );
     }
 
     group.finish();
@@ -37,9 +36,11 @@ fn kzg_commit<E: Pairing>(c: &mut Criterion) {
         let ck = urs.ck();
         let poly = Poly::<E::ScalarField>::rand(max_degree, rng);
 
-        group.bench_with_input(BenchmarkId::new("commit", format!("2^{}", log_n)), &log_n, |b, _| {
-            b.iter(|| KZG::<E>::commit(&ck, &poly).unwrap())
-        });
+        group.bench_with_input(
+            BenchmarkId::new("commit", format!("2^{}", log_n)),
+            &log_n,
+            |b, _| b.iter(|| KZG::<E>::commit(&ck, &poly).unwrap()),
+        );
     }
 
     group.finish();
@@ -57,9 +58,11 @@ fn kzg_open<E: Pairing>(c: &mut Criterion) {
         let poly = Poly::<E::ScalarField>::rand(max_degree, rng);
         let x = E::ScalarField::rand(rng);
 
-        group.bench_with_input(BenchmarkId::new("open", format!("2^{}", log_n)), &log_n, |b, _| {
-            b.iter(|| KZG::<E>::open(&ck, &poly, x).unwrap())
-        });
+        group.bench_with_input(
+            BenchmarkId::new("open", format!("2^{}", log_n)),
+            &log_n,
+            |b, _| b.iter(|| KZG::<E>::open(&ck, &poly, x).unwrap()),
+        );
     }
 
     group.finish();
@@ -81,9 +84,13 @@ fn kzg_verify<E: Pairing>(c: &mut Criterion) {
         let proof = KZG::<E>::open(&ck, &poly, x).unwrap();
         let commitment = KZG::<E>::commit(&ck, &poly).unwrap();
 
-        group.bench_with_input(BenchmarkId::new("verify", format!("2^{}", log_n)), &log_n, |b, _| {
-            b.iter(|| KZG::<E>::verify(&vk, commitment.clone(), x, y, proof.clone()).unwrap())
-        });
+        group.bench_with_input(
+            BenchmarkId::new("verify", format!("2^{}", log_n)),
+            &log_n,
+            |b, _| {
+                b.iter(|| KZG::<E>::verify(&vk, commitment.clone(), x, y, proof.clone()).unwrap())
+            },
+        );
     }
 
     group.finish();
@@ -101,11 +108,24 @@ fn kzg_batch_verify<E: Pairing>(c: &mut Criterion) {
     let vk = urs.vk();
 
     for k in [2, 4, 8] {
-        let polys: Vec<_> = (0..k).map(|_| Poly::<E::ScalarField>::rand(max_degree, rng)).collect();
+        let polys: Vec<_> = (0..k)
+            .map(|_| Poly::<E::ScalarField>::rand(max_degree, rng))
+            .collect();
         let xs: Vec<_> = (0..k).map(|_| E::ScalarField::rand(rng)).collect();
-        let ys: Vec<_> = polys.iter().zip(xs.iter()).map(|(p, x)| ark_poly::Polynomial::evaluate(p, x)).collect();
-        let commitments: Vec<_> = polys.iter().map(|p| KZG::<E>::commit(&ck, p).unwrap()).collect();
-        let proofs: Vec<_> = polys.iter().zip(xs.iter()).map(|(p, &x)| KZG::<E>::open(&ck, p, x).unwrap()).collect();
+        let ys: Vec<_> = polys
+            .iter()
+            .zip(xs.iter())
+            .map(|(p, x)| ark_poly::Polynomial::evaluate(p, x))
+            .collect();
+        let commitments: Vec<_> = polys
+            .iter()
+            .map(|p| KZG::<E>::commit(&ck, p).unwrap())
+            .collect();
+        let proofs: Vec<_> = polys
+            .iter()
+            .zip(xs.iter())
+            .map(|(p, &x)| KZG::<E>::open(&ck, p, x).unwrap())
+            .collect();
 
         group.bench_with_input(BenchmarkId::new("batch-verify", k), &k, |b, _| {
             b.iter_with_setup(
