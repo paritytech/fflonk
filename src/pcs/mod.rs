@@ -16,7 +16,7 @@ pub mod kzg;
 pub mod ipa;
 
 // pub use kzg::KZG;
-pub use ipa::IPA;
+// pub use ipa::IPA;
 
 pub trait Commitment<F: PrimeField>:
     Eq
