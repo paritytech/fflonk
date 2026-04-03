@@ -75,7 +75,7 @@ fn evaluate_final_poly<F: Field>(xs: &[F], z: &F) -> F {
 pub struct Proof<C: AffineRepr> {
     ls: Vec<C>,
     rs: Vec<C>,
-    final_p: C,
+    _final_p: C,
     final_a: C::ScalarField,
     final_b: C::ScalarField,
     xs: Vec<C::ScalarField>,
@@ -143,7 +143,7 @@ pub fn bullet_prove<C: AffineRepr>(log_n: usize, g: &[C], h: &[C], a: &[C::Scala
     Proof {
         ls,
         rs,
-        final_p: p1,
+        _final_p: p1,
         final_a,
         final_b,
         xs,
