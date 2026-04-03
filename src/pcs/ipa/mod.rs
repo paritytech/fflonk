@@ -19,7 +19,7 @@ fn fold_points<C: AffineRepr>(l: &[C], r: &[C], x: &C::ScalarField) -> Vec<C> {
     assert_eq!(l.len(), r.len());
     let proj: Vec<C::Group> = ark_std::cfg_iter!(l)
         .zip(r)
-        .map(|(&l, &r)| (l + r * x))
+        .map(|(&l, &r)| l + r * x)
         .collect();
     C::Group::normalize_batch(&proj)
 }
@@ -29,7 +29,7 @@ fn fold_scalars<F: Field>(l: &[F], r: &[F], x: &F) -> Vec<F> {
     assert_eq!(l.len(), r.len());
     ark_std::cfg_iter!(l)
         .zip(r)
-        .map(|(&l, &r)| (l + r * x))
+        .map(|(&l, &r)| l + r * x)
         .collect()
 }
 

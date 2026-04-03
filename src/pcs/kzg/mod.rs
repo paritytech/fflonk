@@ -8,7 +8,7 @@ use ark_std::ops::Mul;
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
-use crate::pcs::kzg::commitment::KzgCommitment;
+use crate::pcs::kzg::commitment::WrappedAffine;
 use crate::pcs::kzg::params::{KzgCommitterKey, KzgVerifierKey};
 use crate::pcs::kzg::urs::URS;
 use crate::pcs::{CommitterKey, PCS};
@@ -114,17 +114,17 @@ impl<E: Pairing> KZG<E> {
         Self::verify_accumulated(acc_opening, vk)
     }
 
-    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> KzgCommitment<E> {
+    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> WrappedAffine<E::G1Affine> {
         // `msm` allows to call into implementation of `VariableBaseMSM` for `Projective.
         // This allows to call into custom implementations of `msm` (`msm_unchecked` not).
         let len = usize::min(coeffs.len(), bases.len());
         let proj = <E::G1 as VariableBaseMSM>::msm(&bases[..len], &coeffs[..len]).unwrap();
-        KzgCommitment(proj.into_affine())
+        WrappedAffine(proj.into_affine())
     }
 }
 
 impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
-    type C = KzgCommitment<E>;
+    type C = WrappedAffine<E::G1Affine>;
     type Proof = E::G1Affine;
 
     type CK = KzgCommitterKey<E::G1Affine>;
