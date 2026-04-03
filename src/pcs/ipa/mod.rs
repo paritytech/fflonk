@@ -1,4 +1,5 @@
 mod ipa_pc;
+mod r#trait;
 
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{batch_inversion, Field, One};
