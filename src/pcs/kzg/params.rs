@@ -119,13 +119,13 @@ impl<E: Pairing> RawVerifierKey for RawKzgVerifierKey<E> {
 #[derive(Clone, Debug)]
 pub struct KzgVerifierKey<E: Pairing> {
     // generator of G1
-    pub(crate) g1: E::G1Affine,
+    pub g1: E::G1Affine,
     // G1Prepared is just a wrapper around G1Affine // TODO: fixed-base precomputations
     // generator of G2, prepared
-    pub(crate) g2: E::G2Prepared,
+    pub g2: E::G2Prepared,
     // G2Prepared can be used as a pairing RHS only
     // tau.g2, prepared
-    pub(crate) tau_in_g2: E::G2Prepared, // G2Prepared can be used as a pairing RHS only
+    pub tau_in_g2: E::G2Prepared, // G2Prepared can be used as a pairing RHS only
 }
 
 impl<E: Pairing> VerifierKey for KzgVerifierKey<E> {}

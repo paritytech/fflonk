@@ -22,9 +22,7 @@ impl<C: CurveGroup> CommitterKey for IPA<C> {
     }
 }
 
-impl<C: CurveGroup> VerifierKey for IPA<C> {
-
-}
+impl<C: CurveGroup> VerifierKey for IPA<C> {}
 
 impl<C: CurveGroup> RawVerifierKey for IPA<C> {
     type VK = Self;
@@ -72,18 +70,18 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
         }
     }
 
-    fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Self::C {
+    fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Result<Self::C, ()> {
         let p_comm: C::Affine = C::msm(&ck.g, &p.coeffs).unwrap().into_affine();
-        WrappedAffine(p_comm)
+        Ok(WrappedAffine(p_comm))
     }
 
-    fn open(ck: &Self, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Self::Proof {
+    fn open(ck: &Self, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Result<Self::Proof, ()> {
         let x_powers: Vec<C::ScalarField> = crate::utils::powers(x).take(ck.n).collect();
         let proof = ipa_pc::open(ck.log_n, ck.g.clone(), ck.h, p.coeffs.clone(), x_powers);
-        proof
+        Ok(proof)
     }
 
-    fn verify(vk: &Self, c: Self::C, x: C::ScalarField, z: C::ScalarField, proof: Self::Proof) -> bool {
-        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof)
+    fn verify(vk: &Self, c: Self::C, x: C::ScalarField, z: C::ScalarField, proof: Self::Proof) -> Result<(), ()> {
+        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof).then(|| ()).ok_or(())
     }
 }

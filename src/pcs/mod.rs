@@ -3,7 +3,7 @@ use ark_poly::Evaluations;
 use ark_serialize::*;
 use ark_std::fmt::Debug;
 use ark_std::iter::Sum;
-use ark_std::ops::{Add, Sub};
+use ark_std::ops::{Add, Mul, Sub};
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
@@ -24,6 +24,7 @@ pub trait Commitment<F: PrimeField>:
     + Clone
     + Debug
     + Add<Self, Output = Self>
+    + Mul<F, Output = Self>
     + Sub<Self, Output = Self>
     + Sum<Self>
     + CanonicalSerialize
@@ -86,22 +87,24 @@ pub trait PCS<F: PrimeField> {
     // vk needs to be convertible to a ck that is only required to commit to the p=1 constant polynomial,
     // see https://eprint.iacr.org/archive/2020/1536/1629188090.pdf, section 4.2
     type VK: VerifierKey + Into<Self::CK>;
+
     type Params: PcsParams<CK = Self::CK, VK = Self::VK>;
 
     fn setup<R: Rng>(max_degree: usize, rng: &mut R) -> Self::Params;
 
-    fn commit(ck: &Self::CK, p: &Poly<F>) -> Self::C;
+    fn commit(ck: &Self::CK, p: &Poly<F>) -> Result<Self::C, ()>;
 
-    fn commit_evals(ck: &Self::CK, evals: &Evaluations<F>) -> Self::C {
+    fn commit_evals(ck: &Self::CK, evals: &Evaluations<F>) -> Result<Self::C, ()> {
         let poly = evals.interpolate_by_ref();
         Self::commit(ck, &poly)
     }
 
-    fn open(ck: &Self::CK, p: &Poly<F>, x: F) -> Self::Proof; //TODO: eval?
+    fn open(ck: &Self::CK, p: &Poly<F>, x: F) -> Result<Self::Proof, ()>;
 
     // p(x) = z
-    fn verify(vk: &Self::VK, c: Self::C, x: F, z: F, proof: Self::Proof) -> bool;
+    fn verify(vk: &Self::VK, c: Self::C, x: F, z: F, proof: Self::Proof) -> Result<(), ()>;
 
+    // TODO: is the default implementation useful?
     fn batch_verify<R: Rng>(
         vk: &Self::VK,
         c: Vec<Self::C>,
@@ -109,13 +112,15 @@ pub trait PCS<F: PrimeField> {
         y: Vec<F>,
         proof: Vec<Self::Proof>,
         _rng: &mut R,
-    ) -> bool {
+    ) -> Result<(), ()> {
         assert_eq!(c.len(), x.len());
         assert_eq!(c.len(), y.len());
         c.into_iter()
             .zip(x.into_iter())
             .zip(y.into_iter())
             .zip(proof.into_iter())
-            .all(|(((c, x), y), proof)| Self::verify(vk, c, x, y, proof))
+            .all(|(((c, x), y), proof)| Self::verify(vk, c, x, y, proof).is_ok())
+            .then(|| ())
+            .ok_or(())
     }
 }

@@ -1,4 +1,3 @@
-use ark_ff::Zero;
 use ark_poly::Polynomial;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::vec::Vec;
@@ -28,23 +27,27 @@ impl<F: PrimeField> Sub<Self> for WrappedPolynomial<F> {
     type Output = WrappedPolynomial<F>;
 
     fn sub(self, other: WrappedPolynomial<F>) -> Self::Output {
-        let mut temp = self.0;
-        temp -= &other.0; //TODO
-        WrappedPolynomial(temp)
+        WrappedPolynomial(self.0 - other.0)
     }
 }
 
-impl<F: PrimeField> core::iter::Sum<Self> for WrappedPolynomial<F> {
+impl<F: PrimeField> Sum<Self> for WrappedPolynomial<F> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.reduce(|a, b| a + b).unwrap()
     }
 }
 
+impl<F: PrimeField> Mul<F> for WrappedPolynomial<F> {
+    type Output = WrappedPolynomial<F>;
+
+    fn mul(self, by: F) -> Self {
+        (&self).mul(by)
+    }
+}
+
 impl<F: PrimeField> Commitment<F> for WrappedPolynomial<F> {
     fn mul(&self, by: F) -> Self {
-        let mut temp = Poly::zero(); //TODO
-        temp += (by, &self.0);
-        WrappedPolynomial(temp)
+        WrappedPolynomial(&self.0 * by)
     }
 
     fn combine(coeffs: &[F], commitments: &[Self]) -> Self {
@@ -110,15 +113,15 @@ impl<F: PrimeField> PCS<F> for IdentityCommitment {
         ()
     }
 
-    fn commit(_ck: &(), p: &Poly<F>) -> Self::C {
-        WrappedPolynomial(p.clone())
+    fn commit(_ck: &(), p: &Poly<F>) -> Result<Self::C, ()> {
+        Ok(WrappedPolynomial(p.clone()))
     }
 
-    fn open(_ck: &(), _p: &Poly<F>, _x: F) -> Self::Proof {
-        ()
+    fn open(_ck: &(), _p: &Poly<F>, _x: F) -> Result<Self::Proof, ()> {
+        Ok(())
     }
 
-    fn verify(_vk: &(), c: Self::C, x: F, z: F, _proof: Self::Proof) -> bool {
-        c.evaluate(&x) == z
+    fn verify(_vk: &(), c: Self::C, x: F, z: F, _proof: Self::Proof) -> Result<(), ()> {
+        (c.evaluate(&x) == z).then(|| ()).ok_or(())
     }
 }

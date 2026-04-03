@@ -135,7 +135,7 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
         URS::<E>::generate(max_degree + 1, 2, rng)
     }
 
-    fn commit(ck: &Self::CK, p: &Poly<E::ScalarField>) -> Self::C {
+    fn commit(ck: &Self::CK, p: &Poly<E::ScalarField>) -> Result<Self::C, ()> {
         let ck = &ck.monomial;
         assert!(
             p.degree() <= ck.max_degree(),
@@ -143,10 +143,10 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
             p.degree(),
             ck.max_evals()
         );
-        Self::_commit(&p.coeffs, &ck.powers_in_g1)
+        Ok(Self::_commit(&p.coeffs, &ck.powers_in_g1))
     }
 
-    fn commit_evals(ck: &Self::CK, evals: &Evaluations<E::ScalarField>) -> Self::C {
+    fn commit_evals(ck: &Self::CK, evals: &Evaluations<E::ScalarField>) -> Result<Self::C, ()> {
         let ck = ck
             .lagrangian
             .as_ref()
@@ -158,12 +158,12 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
             evals.evals.len(),
             ck.max_evals()
         );
-        Self::_commit(&evals.evals, &ck.lis_in_g)
+        Ok(Self::_commit(&evals.evals, &ck.lis_in_g))
     }
 
-    fn open(ck: &Self::CK, p: &Poly<E::ScalarField>, x: E::ScalarField) -> Self::Proof {
+    fn open(ck: &Self::CK, p: &Poly<E::ScalarField>, x: E::ScalarField) -> Result<Self::Proof, ()> {
         let q = Self::compute_quotient(p, x);
-        Self::commit(ck, &q).0
+        Self::commit(ck, &q).map(|c| c.0)
     }
 
     fn verify(
@@ -172,14 +172,14 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
         x: E::ScalarField,
         y: E::ScalarField,
         proof: Self::Proof,
-    ) -> bool {
+    ) -> Result<(),()> {
         let opening = KzgOpening {
             c: c.0,
             x,
             y,
             proof,
         };
-        Self::verify_single(opening, vk)
+        Self::verify_single(opening, vk).then(|| ()).ok_or(())
     }
 
     fn batch_verify<R: Rng>(
@@ -189,7 +189,7 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
         y: Vec<E::ScalarField>,
         proof: Vec<Self::Proof>,
         rng: &mut R,
-    ) -> bool {
+    ) -> Result<(), ()> {
         assert_eq!(c.len(), x.len());
         assert_eq!(c.len(), y.len());
         let openings = c
@@ -204,7 +204,7 @@ impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
                 proof,
             })
             .collect();
-        Self::verify_batch(openings, vk, rng)
+        Self::verify_batch(openings, vk, rng).then(|| ()).ok_or(())
     }
 }
 
