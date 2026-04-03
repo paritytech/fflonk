@@ -76,7 +76,7 @@ pub fn open<C: AffineRepr>(log_n: usize, g: Vec<C>, h: C, f: Vec<C::ScalarField>
 /// `u` -- the extra base used to commit to the scalar products in Bulletproofs
 /// `cf` -- Pedersen commitment to the polynomial, `Cf = f0.G1 + ...+ fd.Gn`, where `n = d+1`
 /// `f(z) = v`
-pub fn check_assuming_g_final<C: AffineRepr>(g_final: C, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) {
+pub fn check_assuming_g_final<C: AffineRepr>(g_final: C, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) -> bool {
     let xs = proof.xs;
     let mut xs_inv = xs.clone();
     batch_inversion(xs_inv.as_mut_slice());
@@ -91,10 +91,10 @@ pub fn check_assuming_g_final<C: AffineRepr>(g_final: C, u: C, cf: C, z: C::Scal
     let z_final = evaluate_final_poly(&xs_inv, &z);
     let sp_final = proof.f_final * z_final; // scalar product of size 1
     let rhs = g_final * proof.f_final + u * sp_final;
-    assert_eq!(cp_final, rhs); //TODO: merge into single msm
+    cp_final == rhs //TODO: merge into single msm
 }
 
-pub fn check<C: AffineRepr>(g: Vec<C>, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) {
+pub fn check<C: AffineRepr>(g: Vec<C>, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) -> bool {
     // TODO: duplicate
     let xs = proof.xs.clone();
     let mut xs_inv = xs.clone();
@@ -102,7 +102,7 @@ pub fn check<C: AffineRepr>(g: Vec<C>, u: C, cf: C, z: C::ScalarField, v: C::Sca
 
     let final_exps = final_folding_exponents(&xs_inv);
     let g_final = C::Group::msm(&g, &final_exps).unwrap().into_affine();
-    check_assuming_g_final(g_final, u, cf, z, v, proof);
+    check_assuming_g_final(g_final, u, cf, z, v, proof)
 }
 
 #[cfg(test)]
@@ -133,6 +133,6 @@ mod tests {
         let v = f.evaluate(&z);
 
         let proof = open(log_n, g.clone(), h, f.coeffs, z_powers);
-        check(g, h, f_comm, z, v, proof);
+        assert!(check(g, h, f_comm, z, v, proof));
     }
 }

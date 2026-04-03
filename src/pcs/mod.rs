@@ -96,6 +96,7 @@ pub trait PCS<F: PrimeField> {
 
     fn open(ck: &Self::CK, p: &Poly<F>, x: F) -> Self::Proof; //TODO: eval?
 
+    // p(x) = z
     fn verify(vk: &Self::VK, c: Self::C, x: F, z: F, proof: Self::Proof) -> bool;
 
     fn batch_verify<R: Rng>(

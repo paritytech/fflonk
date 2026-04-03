@@ -4,13 +4,16 @@ use crate::Poly;
 use ark_ec::CurveGroup;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::rand::Rng;
+use ark_std::UniformRand;
 use ark_std::vec::Vec;
 use crate::pcs::kzg::commitment::WrappedAffine;
 
 #[derive(Clone, Debug, Eq, PartialEq, CanonicalSerialize, CanonicalDeserialize)]
 pub struct IPA<C: CurveGroup> {
+    log_n: usize,
+    n: usize,
     g: Vec<C::Affine>,
-    u: C::Affine,
+    h: C::Affine,
 }
 
 impl<C: CurveGroup> CommitterKey for IPA<C> {
@@ -55,19 +58,31 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
     type VK = Self;
     type Params = Self;
 
-    fn setup<R: Rng>(max_degree: usize, rng: &mut R) -> Self::Params {
-        todo!()
+    fn setup<R: Rng>(log_n: usize, rng: &mut R) -> Self::Params {
+        let n = 2usize.pow(log_n as u32);
+        // assert_eq!(n, max_degree + 1);
+        let g = (0..n).map(|_| C::Affine::rand(rng)).collect::<Vec<_>>(); //TODO: proj + batch affine
+        let h = C::Affine::rand(rng);
+        Self {
+            log_n,
+            n,
+            g,
+            h,
+        }
     }
 
-    fn commit(ck: &Self::CK, p: &Poly<C::ScalarField>) -> Self::C {
-        todo!()
+    fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Self::C {
+        let p_comm: C::Affine = C::msm(&ck.g, &p.coeffs).unwrap().into_affine();
+        WrappedAffine(p_comm)
     }
 
-    fn open(ck: &Self::CK, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Self::Proof {
-        todo!()
+    fn open(ck: &Self, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Self::Proof {
+        let x_powers: Vec<C::ScalarField> = crate::utils::powers(x).take(ck.n).collect();
+        let proof = ipa_pc::open(ck.log_n, ck.g.clone(), ck.h, p.coeffs.clone(), x_powers);
+        proof
     }
 
-    fn verify(vk: &Self::VK, c: Self::C, x: C::ScalarField, z: C::ScalarField, proof: Self::Proof) -> bool {
-        todo!()
+    fn verify(vk: &Self, c: Self::C, x: C::ScalarField, z: C::ScalarField, proof: Self::Proof) -> bool {
+        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof)
     }
 }
