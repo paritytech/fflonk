@@ -1,3 +1,4 @@
+use ark_ec::pairing::Pairing;
 use ark_ec::{AffineRepr, CurveGroup};
 use ark_serialize::*;
 use ark_std::iter::Sum;
@@ -11,7 +12,7 @@ use crate::utils::ec::small_multiexp_affine;
 #[derive(Clone, Debug, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize)]
 pub struct WrappedAffine<C: AffineRepr>(pub C);
 
-pub type KzgCommitment<C> = WrappedAffine<C>;
+pub type KzgCommitment<E> = WrappedAffine<<E as Pairing>::G1Affine>;
 
 impl<C: AffineRepr> Commitment<C::ScalarField> for WrappedAffine<C> {
     fn mul(&self, by: C::ScalarField) -> Self {

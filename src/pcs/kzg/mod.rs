@@ -113,7 +113,7 @@ impl<E: Pairing> KZG<E> {
         Self::verify_accumulated(acc_opening, vk)
     }
 
-    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> KzgCommitment<E::G1Affine> {
+    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> KzgCommitment<E> {
         // `msm` allows to call into implementation of `VariableBaseMSM` for `Projective.
         // This allows to call into custom implementations of `msm` (`msm_unchecked` not).
         let proj = <E::G1 as VariableBaseMSM>::msm(&bases[..coeffs.len()], &coeffs).unwrap();
@@ -122,7 +122,7 @@ impl<E: Pairing> KZG<E> {
 }
 
 impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
-    type C = KzgCommitment<E::G1Affine>;
+    type C = KzgCommitment<E>;
     type Proof = E::G1Affine;
 
     type CK = KzgCommitterKey<E::G1Affine>;
