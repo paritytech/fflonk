@@ -1,12 +1,12 @@
 use crate::pcs::ipa::ipa_pc;
+use crate::pcs::kzg::commitment::KzgCommitment;
 use crate::pcs::{CommitterKey, PcsParams, RawVerifierKey, VerifierKey, PCS};
 use crate::Poly;
 use ark_ec::CurveGroup;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::rand::Rng;
-use ark_std::UniformRand;
 use ark_std::vec::Vec;
-use crate::pcs::kzg::commitment::KzgCommitment;
+use ark_std::UniformRand;
 
 #[derive(Clone, Debug, Eq, PartialEq, CanonicalSerialize, CanonicalDeserialize)]
 pub struct IPA<C: CurveGroup> {
@@ -62,12 +62,7 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
         // assert_eq!(n, max_degree + 1);
         let g = (0..n).map(|_| C::Affine::rand(rng)).collect::<Vec<_>>(); //TODO: proj + batch affine
         let h = C::Affine::rand(rng);
-        Self {
-            log_n,
-            n,
-            g,
-            h,
-        }
+        Self { log_n, n, g, h }
     }
 
     fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Result<Self::C, ()> {
@@ -81,7 +76,15 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
         Ok(proof)
     }
 
-    fn verify(vk: &Self, c: Self::C, x: C::ScalarField, z: C::ScalarField, proof: Self::Proof) -> Result<(), ()> {
-        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof).then(|| ()).ok_or(())
+    fn verify(
+        vk: &Self,
+        c: Self::C,
+        x: C::ScalarField,
+        z: C::ScalarField,
+        proof: Self::Proof,
+    ) -> Result<(), ()> {
+        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof)
+            .then(|| ())
+            .ok_or(())
     }
 }

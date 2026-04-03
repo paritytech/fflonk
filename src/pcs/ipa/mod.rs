@@ -3,18 +3,15 @@ mod trait_impl;
 
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{batch_inversion, Field, One};
-use ark_std::test_rng;
-use ark_std::vec::Vec;
 use ark_std::rand::Rng;
+use ark_std::test_rng;
 use ark_std::vec;
+use ark_std::vec::Vec;
 
 pub use trait_impl::IPA;
 
 fn scalar_prod<F: Field>(a: &[F], b: &[F]) -> F {
-    ark_std::cfg_iter!(a)
-        .zip(b)
-        .map(|(a, b)| *a * b)
-        .sum()
+    ark_std::cfg_iter!(a).zip(b).map(|(a, b)| *a * b).sum()
 }
 
 // Computes `l + xr` pointwise.
@@ -36,7 +33,6 @@ fn fold_scalars<F: Field>(l: &[F], r: &[F], x: &F) -> Vec<F> {
         .collect()
 }
 
-
 // n = 2^m
 // Folding elements V = [A1, ..., An] with scalars [x1, ..., xm] recursively m times using formula
 // V = VL || VR, Vi = VL + xi * VR pointwise, V := Vi, i = 1,...,m
@@ -57,9 +53,6 @@ fn final_folding_exponents<F: Field>(xs: &[F]) -> Vec<F> {
     res
 }
 
-
-
-
 // Computes (1 + x_m z)(1 + x_{m-1} z^2) ... (1 + x_1 z^{2^{m-1}}).
 fn evaluate_final_poly<F: Field>(xs: &[F], z: &F) -> F {
     let mut res = F::one();
@@ -71,7 +64,6 @@ fn evaluate_final_poly<F: Field>(xs: &[F], z: &F) -> F {
     res
 }
 
-
 pub struct Proof<C: AffineRepr> {
     ls: Vec<C>,
     rs: Vec<C>,
@@ -81,13 +73,20 @@ pub struct Proof<C: AffineRepr> {
     xs: Vec<C::ScalarField>,
 }
 
-pub fn bullet_prove<C: AffineRepr>(log_n: usize, g: &[C], h: &[C], a: &[C::ScalarField], b: &[C::ScalarField], p: C, u: C) -> Proof<C> {
+pub fn bullet_prove<C: AffineRepr>(
+    log_n: usize,
+    g: &[C],
+    h: &[C],
+    a: &[C::ScalarField],
+    b: &[C::ScalarField],
+    p: C,
+    u: C,
+) -> Proof<C> {
     let n = 2usize.pow(log_n as u32);
     assert_eq!(g.len(), n);
     assert_eq!(h.len(), n);
     assert_eq!(a.len(), n);
     assert_eq!(b.len(), n);
-
 
     let mut g_folded = g.to_vec();
     let mut h_folded = h.to_vec();
@@ -97,7 +96,9 @@ pub fn bullet_prove<C: AffineRepr>(log_n: usize, g: &[C], h: &[C], a: &[C::Scala
     let mut ls = Vec::<C>::with_capacity(log_n);
     let mut rs = Vec::<C>::with_capacity(log_n);
 
-    let xs: Vec<_> = (0..log_n).map(|_| C::ScalarField::from(test_rng().gen::<u128>())).collect();
+    let xs: Vec<_> = (0..log_n)
+        .map(|_| C::ScalarField::from(test_rng().gen::<u128>()))
+        .collect();
 
     let mut p1 = p;
 
@@ -160,7 +161,6 @@ pub fn verify<C: AffineRepr>(g: &[C], h: &[C], p: C, u: C, proof: Proof<C>) {
 
     let g_exps = g_exps.iter().map(|e| proof.final_a * e).collect();
     let h_exps = h_exps.iter().map(|e| proof.final_b * e).collect();
-
 
     let final_c = proof.final_a * proof.final_b;
 

@@ -1,4 +1,6 @@
-use crate::pcs::ipa::{evaluate_final_poly, final_folding_exponents, fold_points, fold_scalars, scalar_prod};
+use crate::pcs::ipa::{
+    evaluate_final_poly, final_folding_exponents, fold_points, fold_scalars, scalar_prod,
+};
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{batch_inversion, Field};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
@@ -16,7 +18,13 @@ pub struct Proof<C: AffineRepr> {
     xs: Vec<C::ScalarField>, //TODO:
 }
 
-pub fn open<C: AffineRepr>(log_n: usize, g: Vec<C>, h: C, f: Vec<C::ScalarField>, z: Vec<C::ScalarField>) -> Proof<C> {
+pub fn open<C: AffineRepr>(
+    log_n: usize,
+    g: Vec<C>,
+    h: C,
+    f: Vec<C::ScalarField>,
+    z: Vec<C::ScalarField>,
+) -> Proof<C> {
     let n = 2usize.pow(log_n as u32);
     assert_eq!(g.len(), n);
     assert_eq!(f.len(), n);
@@ -29,7 +37,9 @@ pub fn open<C: AffineRepr>(log_n: usize, g: Vec<C>, h: C, f: Vec<C::ScalarField>
     let mut l = Vec::<C>::with_capacity(log_n);
     let mut r = Vec::<C>::with_capacity(log_n);
 
-    let xs: Vec<_> = (0..log_n).map(|_| C::ScalarField::from(test_rng().gen::<u128>())).collect();
+    let xs: Vec<_> = (0..log_n)
+        .map(|_| C::ScalarField::from(test_rng().gen::<u128>()))
+        .collect();
 
     let mut n1 = n;
     for x in xs.iter() {
@@ -76,7 +86,14 @@ pub fn open<C: AffineRepr>(log_n: usize, g: Vec<C>, h: C, f: Vec<C::ScalarField>
 /// `u` -- the extra base used to commit to the scalar products in Bulletproofs
 /// `cf` -- Pedersen commitment to the polynomial, `Cf = f0.G1 + ...+ fd.Gn`, where `n = d+1`
 /// `f(z) = v`
-pub fn check_assuming_g_final<C: AffineRepr>(g_final: C, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) -> bool {
+pub fn check_assuming_g_final<C: AffineRepr>(
+    g_final: C,
+    u: C,
+    cf: C,
+    z: C::ScalarField,
+    v: C::ScalarField,
+    proof: Proof<C>,
+) -> bool {
     let xs = proof.xs;
     let mut xs_inv = xs.clone();
     batch_inversion(xs_inv.as_mut_slice());
@@ -94,7 +111,14 @@ pub fn check_assuming_g_final<C: AffineRepr>(g_final: C, u: C, cf: C, z: C::Scal
     cp_final == rhs //TODO: merge into single msm
 }
 
-pub fn check<C: AffineRepr>(g: Vec<C>, u: C, cf: C, z: C::ScalarField, v: C::ScalarField, proof: Proof<C>) -> bool {
+pub fn check<C: AffineRepr>(
+    g: Vec<C>,
+    u: C,
+    cf: C,
+    z: C::ScalarField,
+    v: C::ScalarField,
+    proof: Proof<C>,
+) -> bool {
     // TODO: duplicate
     let xs = proof.xs.clone();
     let mut xs_inv = xs.clone();

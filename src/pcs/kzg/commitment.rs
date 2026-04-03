@@ -49,6 +49,10 @@ impl<C: AffineRepr> Sub<Self> for KzgCommitment<C> {
 
 impl<C: AffineRepr> Sum<Self> for KzgCommitment<C> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        KzgCommitment(iter.map(|c| c.0.into_group()).sum::<C::Group>().into_affine())
+        KzgCommitment(
+            iter.map(|c| c.0.into_group())
+                .sum::<C::Group>()
+                .into_affine(),
+        )
     }
 }
