@@ -11,6 +11,9 @@ use crate::utils::ec::small_multiexp_affine;
 #[derive(Clone, Debug, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize)]
 pub struct WrappedAffine<C: AffineRepr>(pub C);
 
+//TODO: remove
+pub type KzgCommitment<C> = WrappedAffine<C>;
+
 impl<C: AffineRepr> Commitment<C::ScalarField> for WrappedAffine<C> {
     fn mul(&self, by: C::ScalarField) -> WrappedAffine<C> {
         WrappedAffine(self.0.mul(by).into())
