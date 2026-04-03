@@ -8,7 +8,7 @@ use ark_std::ops::Mul;
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
-use crate::pcs::kzg::commitment::KzgCommitment;
+use crate::pcs::kzg::commitment::{KzgCommitment, WrappedAffine};
 use crate::pcs::kzg::params::{KzgCommitterKey, KzgVerifierKey};
 use crate::pcs::kzg::urs::URS;
 use crate::pcs::{CommitterKey, PCS};
@@ -117,7 +117,7 @@ impl<E: Pairing> KZG<E> {
         // `msm` allows to call into implementation of `VariableBaseMSM` for `Projective.
         // This allows to call into custom implementations of `msm` (`msm_unchecked` not).
         let proj = <E::G1 as VariableBaseMSM>::msm(&bases[..coeffs.len()], &coeffs).unwrap();
-        KzgCommitment(proj.into_affine())
+        WrappedAffine(proj.into_affine())
     }
 }
 

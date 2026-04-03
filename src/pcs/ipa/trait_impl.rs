@@ -1,5 +1,5 @@
 use crate::pcs::ipa::ipa_pc;
-use crate::pcs::kzg::commitment::KzgCommitment;
+use crate::pcs::kzg::commitment::WrappedAffine;
 use crate::pcs::{CommitterKey, PcsParams, RawVerifierKey, VerifierKey, PCS};
 use crate::Poly;
 use ark_ec::CurveGroup;
@@ -51,7 +51,7 @@ impl<C: CurveGroup> PcsParams for IPA<C> {
 }
 
 impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
-    type C = KzgCommitment<C::Affine>;
+    type C = WrappedAffine<C::Affine>;
     type Proof = ipa_pc::Proof<C::Affine>;
     type CK = Self;
     type VK = Self;
@@ -67,7 +67,7 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
 
     fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Result<Self::C, ()> {
         let p_comm: C::Affine = C::msm(&ck.g, &p.coeffs).unwrap().into_affine();
-        Ok(KzgCommitment(p_comm))
+        Ok(WrappedAffine(p_comm))
     }
 
     fn open(ck: &Self, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Result<Self::Proof, ()> {
