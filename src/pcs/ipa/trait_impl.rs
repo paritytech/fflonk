@@ -51,6 +51,7 @@ impl<C: CurveGroup> PcsParams for IPA<C> {
         self.clone()
     }
 }
+
 impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
     type C = WrappedAffine<C::Affine>;
     type Proof = ipa_pc::Proof<C::Affine>;

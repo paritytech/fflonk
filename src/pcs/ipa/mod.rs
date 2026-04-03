@@ -1,5 +1,5 @@
-mod ipa_pc;
-mod r#trait;
+pub mod ipa_pc;
+mod trait_impl;
 
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{batch_inversion, Field, One};
@@ -7,6 +7,8 @@ use ark_std::test_rng;
 use ark_std::vec::Vec;
 use ark_std::rand::Rng;
 use ark_std::vec;
+
+pub use trait_impl::IPA;
 
 fn scalar_prod<F: Field>(a: &[F], b: &[F]) -> F {
     ark_std::cfg_iter!(a)
