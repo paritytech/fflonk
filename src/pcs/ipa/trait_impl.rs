@@ -57,16 +57,20 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
     type VK = Self;
     type Params = Self;
 
-    fn setup<R: Rng>(log_n: usize, rng: &mut R) -> Self::Params {
-        let n = 2usize.pow(log_n as u32);
-        // assert_eq!(n, max_degree + 1);
+    fn setup<R: Rng>(max_degree: usize, rng: &mut R) -> Self::Params {
+        let log_n = ark_std::log2(max_degree + 1);
+        let n = 2usize.pow(log_n);
+        assert!(max_degree + 1 <= n);
         let g = (0..n).map(|_| C::Affine::rand(rng)).collect::<Vec<_>>(); //TODO: proj + batch affine
         let h = C::Affine::rand(rng);
-        Self { log_n, n, g, h }
+        Self { log_n: log_n as usize, n, g, h }
     }
 
     fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Result<Self::C, ()> {
-        let p_comm: C::Affine = C::msm(&ck.g, &p.coeffs).unwrap().into_affine();
+        if ck.max_evals() < p.coeffs.len() {
+            return Err(());
+        }
+        let p_comm: C::Affine = C::msm(&ck.g[..p.coeffs.len()], &p.coeffs).unwrap().into_affine();
         Ok(WrappedAffine(p_comm))
     }
 
