@@ -89,7 +89,7 @@ impl<E: Pairing> KZG<E> {
 
     pub fn verify_accumulated(opening: AccumulatedOpening<E>, vk: &KzgVerifierKey<E>) -> bool {
         E::multi_pairing(
-            &[opening.acc, opening.proof],
+            [opening.acc, opening.proof],
             [vk.g2.clone(), vk.tau_in_g2.clone()],
         )
         .is_zero()
