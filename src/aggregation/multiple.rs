@@ -16,13 +16,13 @@ pub struct MultipointClaim<F: PrimeField, C: Commitment<F>> {
     pub ys: Vec<F>,
 }
 
-pub trait Transcript<F: PrimeField, CS: PCS<F>> {
+pub trait ShplonkTranscript<F: PrimeField, CS: PCS<F>> {
     fn get_gamma(&mut self) -> F;
     fn commit_to_q(&mut self, q: &CS::C);
     fn get_zeta(&mut self) -> F;
 }
 
-pub fn aggregate_polys<F: PrimeField, CS: PCS<F>, T: Transcript<F, CS>>(
+pub fn aggregate_polys<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
     ck: &CS::CK,
     fs: &[Poly<F>],
     xss: &[BTreeSet<F>],
@@ -131,7 +131,7 @@ pub fn group_by_commitment<F: PrimeField, C: Commitment<F>>(
         .collect()
 }
 
-pub fn aggregate_claims<F: PrimeField, CS: PCS<F>, T: Transcript<F, CS>>(
+pub fn aggregate_claims<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
     claims: Vec<MultipointClaim<F, CS::C>>,
     qc: &CS::C,
     onec: &CS::C,

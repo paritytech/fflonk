@@ -2,10 +2,10 @@ use ark_ff::PrimeField;
 use ark_serialize::{CanonicalSerialize, Compress};
 use ark_std::vec;
 
-use crate::aggregation::multiple::Transcript;
+use crate::aggregation::multiple::ShplonkTranscript;
 use crate::pcs::PCS;
 
-impl<F: PrimeField, CS: PCS<F>> Transcript<F, CS> for merlin::Transcript {
+impl<F: PrimeField, CS: PCS<F>> ShplonkTranscript<F, CS> for merlin::Transcript {
     fn get_gamma(&mut self) -> F {
         let mut buf = [0u8; 16];
         self.challenge_bytes(b"gamma", &mut buf);
