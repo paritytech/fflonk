@@ -8,14 +8,13 @@ use ark_std::ops::Mul;
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
-use crate::pcs::kzg::commitment::WrappedAffine;
+use crate::pcs::commitment::WrappedAffine;
 use crate::pcs::kzg::params::{KzgCommitterKey, KzgVerifierKey};
 use crate::pcs::kzg::urs::URS;
 use crate::pcs::{CommitterKey, PCS};
 use crate::utils::ec::{small_multiexp_affine, small_multiexp_proj};
 use crate::Poly;
 
-pub mod commitment;
 mod lagrange;
 pub mod params;
 pub mod urs;
