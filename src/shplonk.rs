@@ -3,10 +3,12 @@ use ark_poly::{DenseUVPolynomial, Polynomial};
 use ark_serialize::*;
 use ark_std::collections::BTreeSet;
 use ark_std::marker::PhantomData;
+use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
 use crate::aggregation::multiple::{
-    aggregate_claims, aggregate_polys, group_by_commitment, ShplonkTranscript,
+    aggregate_claims, aggregate_polys, aggregate_polys_with_bfs, group_by_commitment,
+    ShplonkTranscript,
 };
 use crate::pcs::PCS;
 use crate::Poly;
@@ -32,6 +34,27 @@ impl<F: PrimeField, CS: PCS<F>> Shplonk<F, CS> {
         let (agg_poly, zeta, agg_proof) = aggregate_polys::<F, CS, T>(ck, fs, xss, transcript);
         assert!(agg_poly.evaluate(&zeta).is_zero());
         let opening_proof = CS::open(ck, &agg_poly, zeta).unwrap();
+        AggregateProof {
+            agg_proof,
+            opening_proof,
+        }
+    }
+
+    pub fn open_many_hiding<T: ShplonkTranscript<F, CS>, R: Rng>(
+        ck: &CS::CK,
+        // Polynomials to open.
+        fs: &[Poly<F>],
+        // blinding factor per polynomial.
+        bfs: &[F],
+        // Coordinate sets to open at, per polynomial.
+        xss: &[BTreeSet<F>],
+        transcript: &mut T,
+        rng: &mut R,
+    ) -> AggregateProof<F, CS> {
+        let (agg_poly, agg_bf, zeta, agg_proof) =
+            aggregate_polys_with_bfs::<F, CS, T>(ck, fs, bfs, xss, transcript);
+        assert!(agg_poly.evaluate(&zeta).is_zero());
+        let opening_proof = CS::open_hiding(ck, &agg_poly, agg_bf, zeta, rng).unwrap();
         AggregateProof {
             agg_proof,
             opening_proof,
