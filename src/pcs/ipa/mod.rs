@@ -1,3 +1,4 @@
+pub mod hiding;
 pub mod ipa_pc;
 mod trait_impl;
 

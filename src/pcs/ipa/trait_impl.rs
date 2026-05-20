@@ -1,5 +1,5 @@
-use crate::pcs::ipa::ipa_pc;
 use crate::pcs::commitment::WrappedAffine;
+use crate::pcs::ipa::ipa_pc;
 use crate::pcs::{CommitterKey, PcsParams, RawVerifierKey, VerifierKey, PCS};
 use crate::Poly;
 use ark_ec::CurveGroup;
@@ -63,14 +63,21 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
         assert!(max_degree + 1 <= n);
         let g = (0..n).map(|_| C::Affine::rand(rng)).collect::<Vec<_>>(); //TODO: proj + batch affine
         let h = C::Affine::rand(rng);
-        Self { log_n: log_n as usize, n, g, h }
+        Self {
+            log_n: log_n as usize,
+            n,
+            g,
+            h,
+        }
     }
 
     fn commit(ck: &Self, p: &Poly<C::ScalarField>) -> Result<Self::C, ()> {
         if ck.max_evals() < p.coeffs.len() {
             return Err(());
         }
-        let p_comm: C::Affine = C::msm(&ck.g[..p.coeffs.len()], &p.coeffs).unwrap().into_affine();
+        let p_comm: C::Affine = C::msm(&ck.g[..p.coeffs.len()], &p.coeffs)
+            .unwrap()
+            .into_affine();
         Ok(WrappedAffine(p_comm))
     }
 

@@ -2,7 +2,7 @@ use crate::pcs::ipa::{
     evaluate_final_poly, final_folding_exponents, fold_points, fold_scalars, scalar_prod,
 };
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
-`use ark_ff::{batch_inversion, Field, Zero};
+use ark_ff::{batch_inversion, Field, Zero};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::rand::Rng;
 use ark_std::test_rng;
