@@ -8,6 +8,8 @@ use ark_std::rand::Rng;
 use ark_std::test_rng;
 use ark_std::vec;
 use ark_std::vec::Vec;
+#[cfg(feature = "parallel")]
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 pub use trait_impl::IPA;
 
