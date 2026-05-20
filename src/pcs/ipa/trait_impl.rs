@@ -12,7 +12,7 @@ use ark_std::UniformRand;
 pub struct IPA<C: CurveGroup> {
     log_n: usize,
     n: usize,
-    g: Vec<C::Affine>,
+    pub g: Vec<C::Affine>,
     h: C::Affine,
 }
 
@@ -75,8 +75,12 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
     }
 
     fn open(ck: &Self, p: &Poly<C::ScalarField>, x: C::ScalarField) -> Result<Self::Proof, ()> {
-        let x_powers: Vec<C::ScalarField> = crate::utils::powers(x).take(ck.n).collect();
-        let proof = ipa_pc::open(ck.log_n, ck.g.clone(), ck.h, p.coeffs.clone(), x_powers);
+        let n_coeffs = p.coeffs.len();
+        let log_n = ark_std::log2(n_coeffs) as usize;
+        let n = 1 << log_n;
+        assert!(n_coeffs <= n);
+        let x_powers: Vec<C::ScalarField> = crate::utils::powers(x).take(n).collect();
+        let proof = ipa_pc::open(log_n, ck.g[..n].to_vec(), ck.h, p.coeffs.clone(), x_powers);
         Ok(proof)
     }
 
@@ -87,7 +91,9 @@ impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
         z: C::ScalarField,
         proof: Self::Proof,
     ) -> Result<(), ()> {
-        ipa_pc::check(vk.g.clone(), vk.h, c.0, x, z, proof)
+        let log_n = proof.log_n;
+        let n = 1 << log_n;
+        ipa_pc::check(vk.g[..n].to_vec(), vk.h, c.0, x, z, proof)
             .then(|| ())
             .ok_or(())
     }

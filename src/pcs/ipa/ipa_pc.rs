@@ -2,7 +2,7 @@ use crate::pcs::ipa::{
     evaluate_final_poly, final_folding_exponents, fold_points, fold_scalars, scalar_prod,
 };
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM};
-use ark_ff::{batch_inversion, Field};
+`use ark_ff::{batch_inversion, Field, Zero};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::rand::Rng;
 use ark_std::test_rng;
@@ -16,6 +16,7 @@ pub struct Proof<C: AffineRepr> {
     g_final: C, // aka U
     f_final: C::ScalarField,
     xs: Vec<C::ScalarField>, //TODO:
+    pub log_n: usize,
 }
 
 pub fn open<C: AffineRepr>(
@@ -25,7 +26,9 @@ pub fn open<C: AffineRepr>(
     f: Vec<C::ScalarField>,
     z: Vec<C::ScalarField>,
 ) -> Proof<C> {
-    let n = 2usize.pow(log_n as u32);
+    let n = 1 << log_n;
+    let mut f = f;
+    f.resize(n, C::ScalarField::zero());
     assert_eq!(g.len(), n);
     assert_eq!(f.len(), n);
     assert_eq!(z.len(), n);
@@ -79,6 +82,7 @@ pub fn open<C: AffineRepr>(
         g_final,
         f_final,
         xs,
+        log_n,
     }
 }
 
