@@ -6,7 +6,7 @@ use ark_std::marker::PhantomData;
 use ark_std::vec::Vec;
 
 use crate::aggregation::multiple::{
-    aggregate_claims, aggregate_polys, group_by_commitment, Transcript,
+    aggregate_claims, aggregate_polys, group_by_commitment, ShplonkTranscript,
 };
 use crate::pcs::PCS;
 use crate::Poly;
@@ -23,7 +23,7 @@ pub struct AggregateProof<F: PrimeField, CS: PCS<F>> {
 }
 
 impl<F: PrimeField, CS: PCS<F>> Shplonk<F, CS> {
-    pub fn open_many<T: Transcript<F, CS>>(
+    pub fn open_many<T: ShplonkTranscript<F, CS>>(
         ck: &CS::CK,
         fs: &[Poly<F>],
         xss: &[BTreeSet<F>],
@@ -38,7 +38,7 @@ impl<F: PrimeField, CS: PCS<F>> Shplonk<F, CS> {
         }
     }
 
-    pub fn verify_many<T: Transcript<F, CS>>(
+    pub fn verify_many<T: ShplonkTranscript<F, CS>>(
         vk: &CS::VK,
         fcs: &[CS::C],
         proof: AggregateProof<F, CS>,

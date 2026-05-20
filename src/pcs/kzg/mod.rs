@@ -8,14 +8,13 @@ use ark_std::ops::Mul;
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
-use crate::pcs::kzg::commitment::{KzgCommitment, WrappedAffine};
+use crate::pcs::commitment::WrappedAffine;
 use crate::pcs::kzg::params::{KzgCommitterKey, KzgVerifierKey};
 use crate::pcs::kzg::urs::URS;
 use crate::pcs::{CommitterKey, PCS};
 use crate::utils::ec::{small_multiexp_affine, small_multiexp_proj};
 use crate::Poly;
 
-pub mod commitment;
 mod lagrange;
 pub mod params;
 pub mod urs;
@@ -89,7 +88,7 @@ impl<E: Pairing> KZG<E> {
 
     pub fn verify_accumulated(opening: AccumulatedOpening<E>, vk: &KzgVerifierKey<E>) -> bool {
         E::multi_pairing(
-            &[opening.acc, opening.proof],
+            [opening.acc, opening.proof],
             [vk.g2.clone(), vk.tau_in_g2.clone()],
         )
         .is_zero()
@@ -113,7 +112,7 @@ impl<E: Pairing> KZG<E> {
         Self::verify_accumulated(acc_opening, vk)
     }
 
-    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> KzgCommitment<E> {
+    fn _commit(coeffs: &[E::ScalarField], bases: &[E::G1Affine]) -> WrappedAffine<E::G1> {
         // `msm` allows to call into implementation of `VariableBaseMSM` for `Projective.
         // This allows to call into custom implementations of `msm` (`msm_unchecked` not).
         let proj = <E::G1 as VariableBaseMSM>::msm(&bases[..coeffs.len()], &coeffs).unwrap();
@@ -122,7 +121,7 @@ impl<E: Pairing> KZG<E> {
 }
 
 impl<E: Pairing> PCS<E::ScalarField> for KZG<E> {
-    type C = KzgCommitment<E>;
+    type C = WrappedAffine<E::G1>;
     type Proof = E::G1Affine;
 
     type CK = KzgCommitterKey<E::G1Affine>;

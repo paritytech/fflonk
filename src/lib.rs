@@ -6,7 +6,7 @@ use ark_std::marker::PhantomData;
 use ark_std::rand::Rng;
 use ark_std::vec::Vec;
 
-use aggregation::multiple::Transcript;
+use aggregation::multiple::ShplonkTranscript;
 
 use crate::fflonk::Fflonk;
 use crate::pcs::PCS;
@@ -45,7 +45,7 @@ impl<F: PrimeField, CS: PCS<F>> FflonkyKzg<F, CS> {
         CS::setup(max_degree, rng)
     }
 
-    pub fn open<T: Transcript<F, CS>>(
+    pub fn open<T: ShplonkTranscript<F, CS>>(
         ck: &CS::CK,
         fss: &[Vec<Poly<F>>], // vecs of polynomials to combine
         ts: &[usize],         // lengths of each combination
@@ -75,7 +75,7 @@ impl<F: PrimeField, CS: PCS<F>> FflonkyKzg<F, CS> {
         Shplonk::<F, CS>::open_many(ck, &gs, &xss, transcript)
     }
 
-    pub fn verify<T: Transcript<F, CS>>(
+    pub fn verify<T: ShplonkTranscript<F, CS>>(
         vk: &CS::VK,
         gcs: &[CS::C],
         ts: &[usize],
@@ -94,7 +94,7 @@ impl<F: PrimeField, CS: PCS<F>> FflonkyKzg<F, CS> {
         Shplonk::<F, CS>::verify_many(vk, &gcs, proof, &xss, &yss, transcript)
     }
 
-    pub fn open_single<T: Transcript<F, CS>>(
+    pub fn open_single<T: ShplonkTranscript<F, CS>>(
         ck: &CS::CK,
         fs: &[Poly<F>], // polynomials to combine
         t: usize,       // lengths of the combination
@@ -104,7 +104,7 @@ impl<F: PrimeField, CS: PCS<F>> FflonkyKzg<F, CS> {
         Self::open(ck, &[fs.to_vec()], &[t], &[roots.to_vec()], transcript)
     }
 
-    pub fn verify_single<T: Transcript<F, CS>>(
+    pub fn verify_single<T: ShplonkTranscript<F, CS>>(
         vk: &CS::VK,
         gc: &CS::C,
         t: usize,
@@ -153,7 +153,7 @@ mod tests {
     // pub const BENCH_DEG_LOG2: usize = 16;
     // const BENCH_DEG_LOG3: usize = 24; Eth 2.0 coming?
 
-    impl<F: PrimeField, CS: PCS<F>> Transcript<F, CS> for (F, F) {
+    impl<F: PrimeField, CS: PCS<F>> ShplonkTranscript<F, CS> for (F, F) {
         fn get_gamma(&mut self) -> F {
             self.0
         }
