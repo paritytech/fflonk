@@ -1,5 +1,4 @@
-use ark_ec::pairing::Pairing;
-use ark_ec::{AffineRepr, CurveGroup};
+use ark_ec::CurveGroup;
 use ark_serialize::*;
 use ark_std::iter::Sum;
 use ark_std::ops::{Add, Mul, Sub};
@@ -10,46 +9,47 @@ use crate::utils::ec::small_multiexp_affine;
 
 /// KZG commitment to G1 represented in affine coordinates.
 #[derive(Clone, Debug, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize)]
-pub struct KzgCommitment<E: Pairing>(pub E::G1Affine);
+pub struct WrappedAffine<C: CurveGroup>(pub C::Affine);
 
-impl<E: Pairing> Mul<E::ScalarField> for KzgCommitment<E> {
+impl<C: CurveGroup> Mul<C::ScalarField> for WrappedAffine<C> {
     type Output = Self;
 
-    fn mul(self, by: E::ScalarField) -> Self {
+    fn mul(self, by: C::ScalarField) -> Self {
         (&self).mul(by)
     }
 }
 
-impl<E: Pairing> Commitment<E::ScalarField> for KzgCommitment<E> {
-    fn mul(&self, by: E::ScalarField) -> KzgCommitment<E> {
-        KzgCommitment(self.0.mul(by).into())
+impl<C: CurveGroup> Commitment<C::ScalarField> for WrappedAffine<C> {
+    fn mul(&self, by: C::ScalarField) -> WrappedAffine<C> {
+        WrappedAffine(self.0.mul(by).into_affine())
     }
 
-    fn combine(coeffs: &[<E as Pairing>::ScalarField], commitments: &[Self]) -> Self {
+    fn combine(coeffs: &[C::ScalarField], commitments: &[Self]) -> Self {
         let bases = commitments.iter().map(|c| c.0).collect::<Vec<_>>();
         let prod = small_multiexp_affine(coeffs, &bases);
-        KzgCommitment(prod.into())
+        WrappedAffine(prod.into_affine())
     }
 }
 
-impl<E: Pairing> Add<Self> for KzgCommitment<E> {
-    type Output = KzgCommitment<E>;
+impl<C: CurveGroup> Add<Self> for WrappedAffine<C> {
+    type Output = WrappedAffine<C>;
 
-    fn add(self, other: KzgCommitment<E>) -> KzgCommitment<E> {
-        KzgCommitment((self.0 + other.0).into_affine())
+    fn add(self, other: WrappedAffine<C>) -> WrappedAffine<C> {
+        WrappedAffine((self.0 + other.0).into_affine())
     }
 }
 
-impl<E: Pairing> Sub<Self> for KzgCommitment<E> {
-    type Output = KzgCommitment<E>;
+impl<C: CurveGroup> Sub<Self> for WrappedAffine<C> {
+    type Output = WrappedAffine<C>;
 
-    fn sub(self, other: KzgCommitment<E>) -> KzgCommitment<E> {
-        KzgCommitment((self.0 + -other.0.into_group()).into_affine())
+    fn sub(self, other: WrappedAffine<C>) -> WrappedAffine<C> {
+        WrappedAffine((self.0 - other.0).into_affine())
     }
 }
 
-impl<E: Pairing> Sum<Self> for KzgCommitment<E> {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> KzgCommitment<E> {
-        KzgCommitment(iter.map(|c| c.0.into_group()).sum::<E::G1>().into_affine())
+impl<C: CurveGroup> Sum<Self> for WrappedAffine<C> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> WrappedAffine<C> {
+        let sum: C = iter.map(|c| c.0).sum();
+        WrappedAffine(sum.into_affine())
     }
 }
