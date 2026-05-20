@@ -1,5 +1,5 @@
 use crate::pcs::ipa::ipa_pc;
-use crate::pcs::kzg::commitment::WrappedAffine;
+use crate::pcs::commitment::WrappedAffine;
 use crate::pcs::{CommitterKey, PcsParams, RawVerifierKey, VerifierKey, PCS};
 use crate::Poly;
 use ark_ec::CurveGroup;
@@ -51,7 +51,7 @@ impl<C: CurveGroup> PcsParams for IPA<C> {
 }
 
 impl<C: CurveGroup> PCS<C::ScalarField> for IPA<C> {
-    type C = WrappedAffine<C::Affine>;
+    type C = WrappedAffine<C>;
     type Proof = ipa_pc::Proof<C::Affine>;
     type CK = Self;
     type VK = Self;
