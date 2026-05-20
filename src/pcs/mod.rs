@@ -11,9 +11,10 @@ pub use id::IdentityCommitment;
 
 use crate::Poly;
 
-pub mod id;
-pub mod kzg;
 pub mod commitment;
+pub mod id;
+pub mod ipa;
+pub mod kzg;
 
 pub trait Commitment<F: PrimeField>:
     Eq
@@ -98,7 +99,17 @@ pub trait PCS<F: PrimeField> {
 
     fn open(ck: &Self::CK, p: &Poly<F>, x: F) -> Result<Self::Proof, ()>;
 
-    fn verify(vk: &Self::VK, c: Self::C, x: F, z: F, proof: Self::Proof) -> Result<(), ()>;
+    fn open_hiding<R: Rng>(
+        ck: &Self::CK,
+        p: &Poly<F>,
+        _bf: F,
+        x: F,
+        _rng: &mut R,
+    ) -> Result<Self::Proof, ()> {
+        Self::open(ck, p, x)
+    }
+
+    fn verify(vk: &Self::VK, c: Self::C, x: F, v: F, proof: Self::Proof) -> Result<(), ()>;
 
     // TODO: is the default implementation useful?
     fn batch_verify<R: Rng>(
