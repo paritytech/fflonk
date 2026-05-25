@@ -39,15 +39,6 @@ impl<E: Pairing> URS<E> {
         let n = n1.max(n2);
         assert!(n > 0, "nothing to generate");
 
-        // Until ECFFT for more curves is implemented, see https://github.com/wborgeaud/ecfft-bn254.
-        //
-        // Assertion note: as `TWO_ADICITY` for the field can be >= 32 and on 32-bit machine targets
-        // `usize` is just 32-bit we move the check in the `u64` domain to avoid a panic.
-        assert!(
-            n as u64 <= 1u64 << E::ScalarField::TWO_ADICITY,
-            "number of bases exceeds curve 2-adicity"
-        );
-
         let t_powers = start_timer!(|| format!("Computing {} scalars powers", n));
         // tau^0, ..., tau^(n-1))
         let powers_of_tau: Vec<E::ScalarField> = utils::powers(tau).take(n).collect();
