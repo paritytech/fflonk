@@ -11,9 +11,9 @@ pub use id::IdentityCommitment;
 
 use crate::Poly;
 
+pub mod commitment;
 pub mod id;
 pub mod kzg;
-pub mod commitment;
 
 pub trait Commitment<F: PrimeField>:
     Eq
