@@ -28,11 +28,31 @@ pub fn aggregate_polys<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
     xss: &[BTreeSet<F>],
     transcript: &mut T,
 ) -> (Poly<F>, F, CS::C) {
+    let bfs = vec![F::zero(); fs.len()];
+    let (agg_poly, _agg_bf, eval_coord, q_comm) =
+        aggregate_polys_with_bfs(ck, fs, &bfs, xss, transcript);
+    (agg_poly, eval_coord, q_comm)
+}
+
+pub fn aggregate_polys_with_bfs<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
+    ck: &CS::CK,
+    fs: &[Poly<F>],
+    bfs: &[F],
+    xss: &[BTreeSet<F>],
+    transcript: &mut T,
+) -> (Poly<F>, F, F, CS::C) {
     assert_eq!(
         xss.len(),
         fs.len(),
         "{} opening sets specified for {} polynomials",
         xss.len(),
+        fs.len()
+    );
+    assert_eq!(
+        bfs.len(),
+        fs.len(),
+        "{} blinding factors specified for {} polynomials",
+        bfs.len(),
         fs.len()
     );
     // Both Halo-inf and fflonk/shplonk use the notation "complement" in set-theoretical sense to that used in the code.
@@ -66,6 +86,7 @@ pub fn aggregate_polys<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
     let q = poly::sum_with_powers(gamma, &qs);
     let t_commit =
         start_timer!(|| ark_std::format!("commitment to a degree-{} polynomial", q.degree()));
+    // TODO: blinding factor?
     let qc = CS::commit(ck, &q).unwrap();
     // "W" in the paper
     end_timer!(t_commit);
@@ -94,11 +115,16 @@ pub fn aggregate_polys<F: PrimeField, CS: PCS<F>, T: ShplonkTranscript<F, CS>>(
     // coeff_i := gamma^i * z0(zeta) / zi(zeta)
     let (coeffs, normalizer) = get_coeffs(zs_at_zeta, gamma);
     let t_combine = start_timer!(|| "linear combination of polynomials");
-    let l_norm = &poly::sum_with_coeffs(coeffs, &ps) - &(&q * normalizer);
+    let l_norm = &poly::sum_with_coeffs(coeffs.clone(), &ps) - &(&q * normalizer);
     end_timer!(t_combine);
+    let agg_bf = coeffs
+        .into_iter()
+        .zip(bfs.iter())
+        .map(|(c, bf)| c * bf)
+        .sum();
 
     // It remains to notice that "W'" is a KZG opening proof for polynomial l_norm in point zeta.
-    (l_norm, zeta, qc)
+    (l_norm, agg_bf, zeta, qc)
 }
 
 /// Takes evaluations of vanishing polynomials at a random point `zeta`, and a random challenge `gamma`,

@@ -13,6 +13,7 @@ use crate::Poly;
 
 pub mod commitment;
 pub mod id;
+pub mod ipa;
 pub mod kzg;
 
 pub trait Commitment<F: PrimeField>:
@@ -91,6 +92,11 @@ pub trait PCS<F: PrimeField> {
 
     fn commit(ck: &Self::CK, p: &Poly<F>) -> Result<Self::C, ()>;
 
+    /// Commits to the polynomial `p` blinded by `bf`, returning the blinding factor used (zero if not hiding).
+    fn commit_with_bf(ck: &Self::CK, p: &Poly<F>, _bf: F) -> Result<(Self::C, F), ()> {
+        Ok((Self::commit(ck, p)?, F::zero()))
+    }
+
     fn commit_evals(ck: &Self::CK, evals: &Evaluations<F>) -> Result<Self::C, ()> {
         let poly = evals.interpolate_by_ref();
         Self::commit(ck, &poly)
@@ -98,7 +104,17 @@ pub trait PCS<F: PrimeField> {
 
     fn open(ck: &Self::CK, p: &Poly<F>, x: F) -> Result<Self::Proof, ()>;
 
-    fn verify(vk: &Self::VK, c: Self::C, x: F, z: F, proof: Self::Proof) -> Result<(), ()>;
+    fn open_hiding<R: Rng>(
+        ck: &Self::CK,
+        p: &Poly<F>,
+        _bf: F,
+        x: F,
+        _rng: &mut R,
+    ) -> Result<Self::Proof, ()> {
+        Self::open(ck, p, x)
+    }
+
+    fn verify(vk: &Self::VK, c: Self::C, x: F, v: F, proof: Self::Proof) -> Result<(), ()>;
 
     // TODO: is the default implementation useful?
     fn batch_verify<R: Rng>(
