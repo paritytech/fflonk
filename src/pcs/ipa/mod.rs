@@ -22,7 +22,7 @@ pub struct IpaPcs<C: CurveGroup> {
     /// `k = log2(n)`, the number of folding rounds.
     log_n: usize,
     /// The bases `G_0, ..., G_{n-1}` committing to the coefficients of a polynomial.
-    pub gs: Vec<C::Affine>,
+    gs: Vec<C::Affine>,
     /// The base `U` committing to the inner product in Bulletproofs.
     // TODO 3: re-randomize this, or sample new
     u: C::Affine,
@@ -35,7 +35,6 @@ pub struct Proof<C: AffineRepr> {
     g_final: C, // aka U
     f_final: C::ScalarField,
     xs: Vec<C::ScalarField>, //TODO:
-    pub log_n: usize,
 }
 
 impl<C: CurveGroup> IpaPcs<C> {
@@ -96,7 +95,6 @@ impl<C: CurveGroup> IpaPcs<C> {
             g_final,
             f_final,
             xs,
-            log_n: self.log_n,
         }
     }
 

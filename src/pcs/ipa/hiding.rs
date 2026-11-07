@@ -20,6 +20,8 @@ use ark_std::UniformRand;
 // The verifier
 // 1. Computes the non-hiding commitment `Cp'` as `Cp + a.Cq - t'H = (Cp - t1.H) + a.(Cq - t2.H)`.
 // 2. Verifies the opening against `Cp'`.
+
+/// Parameters of a hiding Inner Product Argument (IPA) Polynomial Commitment Scheme (PCS)
 #[derive(Clone, Debug, Eq, PartialEq, CanonicalSerialize, CanonicalDeserialize)]
 pub struct HidingIpaPcs<C: CurveGroup> {
     pub ipa_pcs: ipa::IpaPcs<C>,
