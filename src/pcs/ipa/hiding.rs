@@ -106,6 +106,14 @@ impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpa<C> {
         Self::commit_hiding(ck, p, C::ScalarField::zero())
     }
 
+    fn commit_with_bf(
+        ck: &Self::CK,
+        p: &Poly<C::ScalarField>,
+        bf: C::ScalarField,
+    ) -> Result<(Self::C, C::ScalarField), ()> {
+        Ok((Self::commit_hiding(ck, p, bf)?, bf))
+    }
+
     fn open(
         _ck: &Self::CK,
         _p: &Poly<C::ScalarField>,

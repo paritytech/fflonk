@@ -92,6 +92,11 @@ pub trait PCS<F: PrimeField> {
 
     fn commit(ck: &Self::CK, p: &Poly<F>) -> Result<Self::C, ()>;
 
+    /// Commits to the polynomial `p` blinded by `bf`, returning the blinding factor used (zero if not hiding).
+    fn commit_with_bf(ck: &Self::CK, p: &Poly<F>, _bf: F) -> Result<(Self::C, F), ()> {
+        Ok((Self::commit(ck, p)?, F::zero()))
+    }
+
     fn commit_evals(ck: &Self::CK, evals: &Evaluations<F>) -> Result<Self::C, ()> {
         let poly = evals.interpolate_by_ref();
         Self::commit(ck, &poly)
