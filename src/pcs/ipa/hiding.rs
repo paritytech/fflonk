@@ -1,5 +1,4 @@
 use crate::pcs::commitment::WrappedAffine;
-use crate::pcs::ipa::ipa_pc;
 use crate::pcs::PCS;
 use crate::pcs::{ipa, CommitterKey, PcsParams, RawVerifierKey, VerifierKey};
 use crate::Poly;
@@ -22,8 +21,9 @@ use ark_std::UniformRand;
 // 1. Computes the non-hiding commitment `Cp'` as `Cp + a.Cq - t'H = (Cp - t1.H) + a.(Cq - t2.H)`.
 // 2. Verifies the opening against `Cp'`.
 #[derive(Clone, Debug, Eq, PartialEq, CanonicalSerialize, CanonicalDeserialize)]
-pub struct HidingIpa<C: CurveGroup> {
-    pub ipa_pcs: ipa::IPA<C>,
+pub struct HidingIpaPcs<C: CurveGroup> {
+    pub ipa_pcs: ipa::IpaPcs<C>,
+    // TODO: make the bases contiguous
     pub h: C::Affine,
 }
 
@@ -37,15 +37,21 @@ pub struct HidingProof<C: CurveGroup> {
     /// `t = t1 + a.t2`, `Cp' = Commit(p', t) = Commit(p', 0) + (t1 + a.t2).H`
     t: C::ScalarField,
     /// Opening proof for the non-hiding commitment `Commit(p', 0)` to `p'`.
-    ipa_pcs_proof: ipa_pc::Proof<C::Affine>,
+    ipa_pcs_proof: ipa::Proof<C::Affine>,
     // TODO: remove
     a: C::ScalarField,
 }
 
-impl<F: PrimeField, C: CurveGroup<ScalarField = F>> HidingIpa<C> {
+impl<F: PrimeField, C: CurveGroup<ScalarField = F>> HidingIpaPcs<C> {
     pub fn commit_hiding(&self, p: &Poly<F>, bf: F) -> Result<WrappedAffine<C>, ()> {
-        let c = ipa::IPA::commit(&self.ipa_pcs, p)?;
-        self.reblind(c.0, F::zero(), bf)
+        let n_coeffs = p.coeffs.len();
+        if self.ipa_pcs.max_evals() < n_coeffs {
+            return Err(());
+        }
+        let bases = [&self.ipa_pcs.gs[..n_coeffs], &[self.h]].concat();
+        let scalars = [p.coeffs.as_slice(), &[bf]].concat();
+        let c = C::msm(&bases, &scalars).unwrap().into_affine();
+        Ok(WrappedAffine(c))
     }
 
     pub fn reblind(&self, c: C::Affine, bf_old: F, bf_new: F) -> Result<WrappedAffine<C>, ()> {
@@ -55,15 +61,15 @@ impl<F: PrimeField, C: CurveGroup<ScalarField = F>> HidingIpa<C> {
     }
 }
 
-impl<C: CurveGroup> CommitterKey for HidingIpa<C> {
+impl<C: CurveGroup> CommitterKey for HidingIpaPcs<C> {
     fn max_degree(&self) -> usize {
         self.ipa_pcs.max_degree()
     }
 }
 
-impl<C: CurveGroup> VerifierKey for HidingIpa<C> {}
+impl<C: CurveGroup> VerifierKey for HidingIpaPcs<C> {}
 
-impl<C: CurveGroup> RawVerifierKey for HidingIpa<C> {
+impl<C: CurveGroup> RawVerifierKey for HidingIpaPcs<C> {
     type VK = Self;
 
     fn prepare(&self) -> Self::VK {
@@ -71,7 +77,7 @@ impl<C: CurveGroup> RawVerifierKey for HidingIpa<C> {
     }
 }
 
-impl<C: CurveGroup> PcsParams for HidingIpa<C> {
+impl<C: CurveGroup> PcsParams for HidingIpaPcs<C> {
     type CK = Self;
     type VK = Self;
     type RVK = Self;
@@ -89,7 +95,7 @@ impl<C: CurveGroup> PcsParams for HidingIpa<C> {
     }
 }
 
-impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpa<C> {
+impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpaPcs<C> {
     type C = WrappedAffine<C>;
     type Proof = HidingProof<C>;
     type CK = Self;
@@ -97,7 +103,7 @@ impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpa<C> {
     type Params = Self;
 
     fn setup<R: Rng>(max_degree: usize, rng: &mut R) -> Self::Params {
-        let ipa_pcs = ipa::IPA::setup(max_degree, rng);
+        let ipa_pcs = ipa::IpaPcs::setup(max_degree, rng);
         let h = C::Affine::rand(rng);
         Self { ipa_pcs, h }
     }
@@ -139,7 +145,7 @@ impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpa<C> {
         let a = C::ScalarField::rand(rng); // TODO: that's a FS point
         let p = p + q * a;
         let t = t1 + t2 * a;
-        let ipa_pcs_proof = ipa::IPA::open(&ck.ipa_pcs, &p, x)?;
+        let ipa_pcs_proof = ipa::IpaPcs::open(&ck.ipa_pcs, &p, x)?;
         Ok(HidingProof {
             q: cq,
             t,
@@ -156,7 +162,7 @@ impl<C: CurveGroup> PCS<C::ScalarField> for HidingIpa<C> {
         proof: Self::Proof,
     ) -> Result<(), ()> {
         let c = c.0 + proof.q * proof.a - vk.h * proof.t;
-        ipa::IPA::verify(
+        ipa::IpaPcs::verify(
             &vk.ipa_pcs,
             WrappedAffine(c.into_affine()),
             x,
@@ -179,7 +185,7 @@ mod tests {
         let max_coeffs = 2usize.pow(6);
         let max_degree = max_coeffs - 1;
 
-        let hiding_pcs = HidingIpa::<G1Projective>::setup(max_degree, rng);
+        let hiding_pcs = HidingIpaPcs::<G1Projective>::setup(max_degree, rng);
 
         let p = Poly::rand(max_degree, rng);
         let bf = Fr::rand(rng);
@@ -187,9 +193,9 @@ mod tests {
         let c = hiding_pcs.commit_hiding(&p, bf).unwrap();
 
         let x = Fr::rand(rng);
-        let pi = HidingIpa::<G1Projective>::open_hiding(&hiding_pcs, &p, bf, x, rng).unwrap();
+        let pi = HidingIpaPcs::<G1Projective>::open_hiding(&hiding_pcs, &p, bf, x, rng).unwrap();
         let v = p.evaluate(&x);
 
-        assert!(HidingIpa::<G1Projective>::verify(&hiding_pcs, c, x, v, pi).is_ok());
+        assert!(HidingIpaPcs::<G1Projective>::verify(&hiding_pcs, c, x, v, pi).is_ok());
     }
 }
